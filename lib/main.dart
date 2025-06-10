@@ -46,9 +46,14 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
   String password = 'budi123'; // MQTT Password
 
   // Topics
+  bool lampuState = false;
+  bool kipasState = false;
   String ledTopic = 'esp32/led';
   String sensorTopic = 'esp32/sensor';
   String statusTopic = 'esp32/status';
+  String lamputopic = "esp32/lampu";
+  String kipastopic = "esp32/kipas";
+  String listriktopic = "esp32/listrik";
 
   // Device States
   bool ledState = false;
@@ -203,9 +208,16 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     }
   }
 
-  void toggleLED() {
-    ledState = !ledState;
-    final message = json.encode({'led': ledState});
+  void toggleLampu() {
+    lampuState = !lampuState;
+    final message = json.encode({'led': lampuState});
+    publishMessage(ledTopic, message);
+    setState(() {});
+  }
+
+  void toggleKipas() {
+    kipasState = !kipasState;
+    final message = json.encode({'led': kipasState});
     publishMessage(ledTopic, message);
     setState(() {});
   }
@@ -239,6 +251,15 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
           handleVoiceCommand(_command);
         },
       );
+      // Stop listening after 3 seconds
+      Timer(Duration(seconds: 3), () {
+        if (_isListening) {
+          _speech.stop();
+          setState(() {
+            _isListening = false;
+          });
+        }
+      });
     } else {
       print("Speech recognition not available");
     }
@@ -259,9 +280,9 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     } else if (command.contains("matikan kipas")) {
       publishMqtt("esp32/kipas", {"state": false});
     } else if (command.contains("nyalakan listrik")) {
-      publishMqtt("esp32/listrik", {"lampu": true, "kipas": true});
+      publishMqtt("esp32/listrik", {"state": true});
     } else if (command.contains("matikan listrik")) {
-      publishMqtt("esp32/listrik", {"lampu": false, "kipas": false});
+      publishMqtt("esp32/listrik", {"state": false});
     } else {
       print("Perintah tidak dikenali.");
     }
@@ -448,23 +469,44 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
                       children: [
                         Icon(
                           Icons.lightbulb,
-                          color: ledState ? Colors.yellow : Colors.grey,
+                          color: lampuState ? Colors.yellow : Colors.grey,
                           size: 30,
                         ),
                         SizedBox(width: 15),
                         Text(
-                          'LED: ${ledState ? "ON" : "OFF"}',
+                          'Lampu: ${lampuState ? "ON" : "OFF"}',
                           style: TextStyle(fontSize: 16),
                         ),
                         Spacer(),
                         Switch(
-                          value: ledState,
+                          value: lampuState,
                           onChanged:
-                              isConnected ? (value) => toggleLED() : null,
+                              isConnected ? (value) => toggleLampu() : null,
                           activeColor: Colors.blue,
                         ),
                       ],
                     ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.mode_fan_off_outlined,
+                          color: kipasState ? Colors.yellow : Colors.grey,
+                          size: 30,
+                        ),
+                        SizedBox(width: 15),
+                        Text(
+                          'Kipas Angin: ${kipasState ? "ON" : "OFF"}',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        Spacer(),
+                        Switch(
+                          value: kipasState,
+                          onChanged:
+                              isConnected ? (value) => toggleKipas() : null,
+                          activeColor: Colors.blue,
+                        ),
+                      ],
+                    )
                   ],
                 ),
               ),
