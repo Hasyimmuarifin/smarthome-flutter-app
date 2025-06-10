@@ -137,6 +137,8 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     // Subscribe to sensor data
     client!.subscribe(sensorTopic, MqttQos.atMostOnce);
     client!.subscribe(statusTopic, MqttQos.atMostOnce);
+    client!.subscribe(lamputopic, MqttQos.atMostOnce);
+    client!.subscribe(kipastopic, MqttQos.atMostOnce);
 
     // Listen for messages
     client!.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
@@ -186,6 +188,20 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
           // Fallback to treating message as plain text
           deviceStatus = message;
         }
+      } else if (topic == lamputopic) {
+        try {
+          final data = json.decode(message);
+          lampuState = data['state'] == true;
+        } catch (e) {
+          print('Error parsing lampu state: $e');
+        }
+      } else if (topic == kipastopic) {
+        try {
+          final data = json.decode(message);
+          kipasState = data['state'] == true;
+        } catch (e) {
+          print('Error parsing kipas state: $e');
+        }
       }
     });
   }
@@ -210,15 +226,15 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
 
   void toggleLampu() {
     lampuState = !lampuState;
-    final message = json.encode({'led': lampuState});
-    publishMessage(ledTopic, message);
+    final message = json.encode({'state': lampuState});
+    publishMessage(lamputopic, message);
     setState(() {});
   }
 
   void toggleKipas() {
     kipasState = !kipasState;
-    final message = json.encode({'led': kipasState});
-    publishMessage(ledTopic, message);
+    final message = json.encode({'state': kipasState});
+    publishMessage(kipastopic, message);
     setState(() {});
   }
 
