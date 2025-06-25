@@ -1,19 +1,30 @@
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//                          Import Library
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-
 import 'package:flutter/material.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'dart:convert';
 import 'dart:async';
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//                              Variabels
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 stt.SpeechToText _speech = stt.SpeechToText();
 bool _isListening = false;
 String _command = '';
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//                            Fungsi main()                                     
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void main() {
   runApp(MyApp());
 }
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//                             Class MyApp                                      
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -28,24 +39,30 @@ class MyApp extends StatelessWidget {
   }
 }
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//                            Class IoTControllerPage                           
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class IoTControllerPage extends StatefulWidget {
   @override
   _IoTControllerPageState createState() => _IoTControllerPageState();
 }
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//                      Class _IoTControllerPageState                           
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class _IoTControllerPageState extends State<IoTControllerPage> {
   MqttServerClient? client;
   bool isConnected = false;
   String connectionStatus = 'Disconnected';
 
-  // MQTT Configuration
+  // - - - - - - - - - - - - - - MQTT Configuration - - - - - - - - - - -  - - -
   String broker = '192.168.236.245'; // Ganti dengan broker Anda
   int port = 1883;
   String clientId = 'flutter_client_${DateTime.now().millisecondsSinceEpoch}';
   String username = 'budi'; // MQTT Username
   String password = 'budi123'; // MQTT Password
 
-  // Topics
+  // - - - - - - - - - - - - Registration Topics MQTT - - - - - - - - - - -  - -
   bool lampuState = false;
   bool kipasState = false;
   String ledTopic = 'esp32/led';
@@ -55,19 +72,22 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
   String kipastopic = "esp32/kipas";
   String listriktopic = "esp32/listrik";
 
-  // Device States
+  // - - - - - - - - - - - - - - Devices State - - - - - - - - - - - - - -  - -
   bool ledState = false;
   double temperature = 0.0;
   double humidity = 0.0;
+  int fire = 0;
+  int gas = 0;
   String deviceStatus = 'Offline';
   int uptime = 0;
 
-  // Controllers
+  // - - - - - -  - - - - - - - Controllers - - - - - - - - - - - - - - - - - - 
   TextEditingController brokerController = TextEditingController();
   TextEditingController usernameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController topicController = TextEditingController();
 
+  // - - - - - -  - - - - - - - initState() - - - - - - - - - - - - - - - - - - 
   @override
   void initState() {
     super.initState();
@@ -76,10 +96,12 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     initSpeech();
   }
 
+  // - - - - - -  - - - - - - - initSpeech() - - - - - - - - - - - - - - - - - -
   void initSpeech() async {
     await _speech.initialize();
   }
 
+  // - - - - - -  - - - - - - Setup MQTT Client() - - - - - - - - - - - - - - -
   void setupMqttClient() {
     client = MqttServerClient(broker, clientId);
     client!.port = port;
@@ -103,6 +125,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     client!.connectionMessage = connMess;
   }
 
+  // - - - - - -  - - - - - - Connect to MQTT Broker() - - - - - - - - - - - - -
   Future<void> connectToMqtt() async {
     setState(() {
       connectionStatus = 'Connecting...';
@@ -128,6 +151,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     }
   }
 
+  // - - - - - -  - - - - - - - - - onConnected() - - - - - - - - - - - - - - - 
   void onConnected() {
     setState(() {
       connectionStatus = 'Connected';
@@ -153,6 +177,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     print('Connected to MQTT broker');
   }
 
+  // - - - - - -  - - - - - - - - - onDisConnected() - - - - - - - - - - - - - -
   void onDisconnected() {
     setState(() {
       connectionStatus = 'Disconnected';
@@ -162,10 +187,12 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     print('Disconnected from MQTT broker');
   }
 
+  // - - - - - -  - - - - - - - onSubscribed() - - - - - - - - - - - - - - - - -
   void onSubscribed(String topic) {
     print('Subscribed to topic: $topic');
   }
 
+  // - - - - - -  - - - - handle Incoming Message() - - - - - - - - - - - - - - 
   void handleIncomingMessage(String topic, String message) {
     print('Received message: $message from topic: $topic');
 
@@ -175,6 +202,8 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
           final data = json.decode(message);
           temperature = data['temperature']?.toDouble() ?? 0.0;
           humidity = data['humidity']?.toDouble() ?? 0.0;
+          fire = data['flame_percent'];
+          gas = data['gas_percent'];
         } catch (e) {
           print('Error parsing sensor data: $e');
         }
@@ -206,6 +235,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     });
   }
 
+  // - - - - - -  - - - - - - Publish Message() - - - - - - - - - - - - - - - - 
   void publishMessage(String topic, String message) {
     if (isConnected) {
       final builder = MqttClientPayloadBuilder();
@@ -215,6 +245,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     }
   }
 
+  // - - - - - -  - - - - - - - Publish MQTT() - - - - - - - - - - - - - - - - -
   void publishMqtt(String topic, Map<String, dynamic> payload) {
     if (isConnected) {
       final builder = MqttClientPayloadBuilder();
@@ -224,6 +255,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     }
   }
 
+  // - - - - - -  - - - - - - - Toogle Lampu() - - - - - - - - - - - - - - - - -
   void toggleLampu() {
     lampuState = !lampuState;
     final message = json.encode({'state': lampuState});
@@ -231,6 +263,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     setState(() {});
   }
 
+  // - - - - - -  - - - - - - - Toogle Kipas() - - - - - - - - - - - - - - - - -
   void toggleKipas() {
     kipasState = !kipasState;
     final message = json.encode({'state': kipasState});
@@ -238,10 +271,12 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     setState(() {});
   }
 
+  // - - - - - -  - - - - - - - Disconnect() - - - - - - - - - - - - - - - - - -
   void disconnect() {
     client!.disconnect();
   }
 
+  // - - - - - -  - - - - - - - Dispose() - - - - - - - - - - - - - - - - - - - 
   @override
   void dispose() {
     client?.disconnect();
@@ -252,6 +287,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     super.dispose();
   }
 
+  // - - - - - -  - - - - - - - - Listen Command() - - - - - - - - - - - - - - -
   void listenCommand() async {
     bool available = await _speech.initialize();
     if (available) {
@@ -281,6 +317,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     }
   }
 
+  // - - - - - -  - - - - - - - Handle Voice Command() - - - - - - - - - - - - -
   void handleVoiceCommand(String command) {
     if (!isConnected || client == null) {
       print("MQTT belum terhubung.");
@@ -304,6 +341,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     }
   }
 
+  // - - - - - -  - - - - - WIDGET BUILD (TAMPILAN) - - - - - - - - - - - - - - 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -541,7 +579,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
                     Text(
                       'Sensor Data',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 18,tempet
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -590,6 +628,50 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
                         ),
                       ],
                     ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.water_drop,
+                                size: 30,
+                                color: Colors.red,
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                '${fire.toStringAsFixed(1)}%',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text('Fire'),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.gas_meter,
+                                size: 30,
+                                color: Colors.green[700],
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                '${gas.toStringAsFixed(1)}%',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text('Gas'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -614,6 +696,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     );
   }
 
+  // - - - - - -  - - - - - - - - - Format Up Time() - - - - - - - - - - - - - -
   String _formatUptime(int seconds) {
     final int hours = seconds ~/ 3600;
     final int minutes = (seconds % 3600) ~/ 60;
