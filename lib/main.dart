@@ -82,6 +82,8 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
   double humidity = 0.0;
   int fire = 0;
   int gas = 0;
+  String fireStatus = 'AMAN'; // default
+  String gasStatus = 'NORMAL';   // default
   String deviceStatus = 'Offline';
   int uptime = 0;
 
@@ -209,7 +211,9 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
           temperature = data['temperature']?.toDouble() ?? 0.0;
           humidity = data['humidity']?.toDouble() ?? 0.0;
           fire = data['flame_percent'];
+          fireStatus = data['flame_status'];
           gas = data['gas_percent'];
+          gasStatus = data['gas_status'];
 
           final pirValue = data['pir'] ?? "";
           if (pirValue == "Terdeteksi") {
@@ -806,45 +810,93 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
                         ),
                       ],
                     ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 10), // Add some bottom padding
+            // Fire and Gas Section
+            Card(
+              elevation: 4,
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Fire and Gas',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 15),
+
+                    // --- FIRE ---
                     Row(
                       children: [
+                        Column(
+                          children: [
+                            Icon(Icons.local_fire_department, size: 30, color: Colors.red),
+                            SizedBox(height: 5),
+                            Text('Fire'),
+                          ],
+                        ),
+                        SizedBox(width: 20),
                         Expanded(
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Icon(
-                                Icons.water_drop,
-                                size: 30,
-                                color: Colors.red,
-                              ),
-                              SizedBox(height: 5),
                               Text(
                                 '${fire.toStringAsFixed(1)}%',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                fireStatus,
                                 style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: fireStatus == "BAHAYA"
+                                      ? Colors.red
+                                      : fireStatus == "WASPADA"
+                                          ? Colors.orange
+                                          : Colors.green,
                                 ),
                               ),
-                              Text('Fire'),
                             ],
                           ),
                         ),
+                      ],
+                    ),
+
+                    Divider(height: 25),
+
+                    // --- GAS ---
+                    Row(
+                      children: [
+                        Column(
+                          children: [
+                            Icon(Icons.gas_meter, size: 30, color: Colors.green),
+                            SizedBox(height: 5),
+                            Text('Gas'),
+                          ],
+                        ),
+                        SizedBox(width: 20),
                         Expanded(
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Icon(
-                                Icons.gas_meter,
-                                size: 30,
-                                color: Colors.green[700],
-                              ),
-                              SizedBox(height: 5),
                               Text(
                                 '${gas.toStringAsFixed(1)}%',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                gasStatus,
                                 style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: gasStatus == "BOCOR"
+                                      ? Colors.red : Colors.green,
                                 ),
                               ),
-                              Text('Gas'),
                             ],
                           ),
                         ),
