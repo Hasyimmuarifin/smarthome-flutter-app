@@ -16,14 +16,14 @@ bool _isListening = false;
 String _command = '';
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-//                            Fungsi main()                                     
+//                            Fungsi main()
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 void main() {
   runApp(MyApp());
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-//                             Class MyApp                                      
+//                             Class MyApp
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class MyApp extends StatelessWidget {
   @override
@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-//                            Class IoTControllerPage                           
+//                            Class IoTControllerPage
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class IoTControllerPage extends StatefulWidget {
   @override
@@ -48,7 +48,7 @@ class IoTControllerPage extends StatefulWidget {
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-//                      Class _IoTControllerPageState                           
+//                      Class _IoTControllerPageState
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class _IoTControllerPageState extends State<IoTControllerPage> {
   MqttServerClient? client;
@@ -56,13 +56,15 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
   String connectionStatus = 'Disconnected';
 
   // - - - - - - - - - - - - - - MQTT Configuration - - - - - - - - - - -  - - -
-  String broker = '192.168.236.245'; // Ganti dengan broker Anda
+  String broker = '192.168.11.103'; // Ganti dengan broker Anda
   int port = 1883;
   String clientId = 'flutter_client_${DateTime.now().millisecondsSinceEpoch}';
-  String username = 'budi'; // MQTT Username
-  String password = 'budi123'; // MQTT Password
+  String username = 'uas25_hasyim'; // MQTT Username
+  String password = 'uas25_hasyim'; // MQTT Password
 
   // - - - - - - - - - - - - Registration Topics MQTT - - - - - - - - - - -  - -
+  bool pirState = false;   // Ada / tidak ada gerakan
+  bool pirEnabled = true;  // PIR aktif atau nonaktif (toggle)
   bool lampuState = false;
   bool kipasState = false;
   String ledTopic = 'esp32/led';
@@ -71,6 +73,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
   String lamputopic = "esp32/lampu";
   String kipastopic = "esp32/kipas";
   String listriktopic = "esp32/listrik";
+  String pircontroltopic = "esp32/pir_control";
 
   // - - - - - - - - - - - - - - Devices State - - - - - - - - - - - - - -  - -
   bool ledState = false;
@@ -81,13 +84,13 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
   String deviceStatus = 'Offline';
   int uptime = 0;
 
-  // - - - - - -  - - - - - - - Controllers - - - - - - - - - - - - - - - - - - 
+  // - - - - - -  - - - - - - - Controllers - - - - - - - - - - - - - - - - - -
   TextEditingController brokerController = TextEditingController();
   TextEditingController usernameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController topicController = TextEditingController();
 
-  // - - - - - -  - - - - - - - initState() - - - - - - - - - - - - - - - - - - 
+  // - - - - - -  - - - - - - - initState() - - - - - - - - - - - - - - - - - -
   @override
   void initState() {
     super.initState();
@@ -151,7 +154,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     }
   }
 
-  // - - - - - -  - - - - - - - - - onConnected() - - - - - - - - - - - - - - - 
+  // - - - - - -  - - - - - - - - - onConnected() - - - - - - - - - - - - - - -
   void onConnected() {
     setState(() {
       connectionStatus = 'Connected';
@@ -163,6 +166,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     client!.subscribe(statusTopic, MqttQos.atMostOnce);
     client!.subscribe(lamputopic, MqttQos.atMostOnce);
     client!.subscribe(kipastopic, MqttQos.atMostOnce);
+    client!.subscribe(pircontroltopic, MqttQos.atMostOnce);
 
     // Listen for messages
     client!.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
@@ -192,7 +196,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     print('Subscribed to topic: $topic');
   }
 
-  // - - - - - -  - - - - handle Incoming Message() - - - - - - - - - - - - - - 
+  // - - - - - -  - - - - handle Incoming Message() - - - - - - - - - - - - - -
   void handleIncomingMessage(String topic, String message) {
     print('Received message: $message from topic: $topic');
 
@@ -204,6 +208,17 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
           humidity = data['humidity']?.toDouble() ?? 0.0;
           fire = data['flame_percent'];
           gas = data['gas_percent'];
+
+        final pirValue = data['pir'] ?? "";
+        if (pirValue == "Terdeteksi") {
+          pirState = true;
+          pirEnabled = true;
+        } else if (pirValue == "Tidak Ada") {
+          pirState = false;
+          pirEnabled = true;
+        } else if (pirValue == "PIR Nonaktif") {
+          pirEnabled = false;
+        }
         } catch (e) {
           print('Error parsing sensor data: $e');
         }
@@ -231,11 +246,18 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
         } catch (e) {
           print('Error parsing kipas state: $e');
         }
+      } else if (topic == pircontroltopic) {
+        try {
+          final data = json.decode(message);
+          pirState = data['enabled'] == true;
+        } catch (e) {
+          print('Error parsing lampu state: $e');
+        }
       }
     });
   }
 
-  // - - - - - -  - - - - - - Publish Message() - - - - - - - - - - - - - - - - 
+  // - - - - - -  - - - - - - Publish Message() - - - - - - - - - - - - - - - -
   void publishMessage(String topic, String message) {
     if (isConnected) {
       final builder = MqttClientPayloadBuilder();
@@ -271,12 +293,46 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     setState(() {});
   }
 
+  // Fungsi untuk toggle PIR
+  void togglePIR(bool value) {
+    setState(() {
+      pirEnabled = value;
+    });
+
+    final data = {
+      "enabled": value,
+    };
+
+    final payload = jsonEncode(data);
+    final builder = MqttClientPayloadBuilder();
+    builder.addUTF8String(payload);
+
+    client?.publishMessage(
+      "esp32/pir_control",
+      MqttQos.atLeastOnce,
+      builder.payload!,
+    );
+  }
+
+void toggleListrik(bool value) {
+  // Setel status lampu dan kipas mengikuti status listrik
+  lampuState = value;
+  kipasState = value;
+
+  // Publish ke semua topik
+  publishMqtt("esp32/lampu", {"state": lampuState});
+  publishMqtt("esp32/kipas", {"state": kipasState});
+  publishMqtt("esp32/listrik", {"state": value});
+
+  setState(() {}); // Update tampilan UI
+}
+
   // - - - - - -  - - - - - - - Disconnect() - - - - - - - - - - - - - - - - - -
   void disconnect() {
     client!.disconnect();
   }
 
-  // - - - - - -  - - - - - - - Dispose() - - - - - - - - - - - - - - - - - - - 
+  // - - - - - -  - - - - - - - Dispose() - - - - - - - - - - - - - - - - - - -
   @override
   void dispose() {
     client?.disconnect();
@@ -334,14 +390,18 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
       publishMqtt("esp32/kipas", {"state": false});
     } else if (command.contains("nyalakan listrik")) {
       publishMqtt("esp32/listrik", {"state": true});
+      publishMqtt("esp32/lampu", {"state": true});
+      publishMqtt("esp32/kipas", {"state": true});
     } else if (command.contains("matikan listrik")) {
       publishMqtt("esp32/listrik", {"state": false});
+      publishMqtt("esp32/lampu", {"state": false});
+      publishMqtt("esp32/kipas", {"state": false});
     } else {
       print("Perintah tidak dikenali.");
     }
   }
 
-  // - - - - - -  - - - - - WIDGET BUILD (TAMPILAN) - - - - - - - - - - - - - - 
+  // - - - - - -  - - - - - WIDGET BUILD (TAMPILAN) - - - - - - - - - - - - - -
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -503,7 +563,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
 
             SizedBox(height: 20),
 
-            // Control Section
+            // Device Control Section
             Card(
               elevation: 4,
               child: Padding(
@@ -566,6 +626,97 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
               ),
             ),
 
+            //Electrical Control Section
+            Card(
+              elevation: 4,
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Electrical Control',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 15),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.power,
+                          color: (lampuState || kipasState) ? Colors.green : Colors.grey,
+                          size: 30,
+                        ),
+                        SizedBox(width: 15),
+                        Text(
+                          'Listrik: ${(lampuState || kipasState) ? "ON" : "OFF"}',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        Spacer(),
+                        Switch(
+                          value: (lampuState || kipasState),
+                          onChanged:
+                              isConnected ? (value) => toggleListrik(value) : null,
+                          activeColor: Colors.blue,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Motion Control Section
+            Card(
+              elevation: 4,
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Motion Control',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 15),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.emoji_people_rounded,
+                          color: pirEnabled
+                            ? (pirState ? Colors.orange : Colors.grey)
+                            : Colors.grey.shade400,
+                          size: 30,
+                        ),
+                        SizedBox(width: 15),
+                        Expanded(
+                          child: Text(
+                            pirEnabled
+                                // ? (pirState ? "Gerakan: Terdeteksi" : "Gerakan: Tidak Ada")
+                                ? ('Gerakan: ${pirState ? "Terdeteksi" : "Tidak Ada"}')
+                                : "PIR Nonaktif",
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                        // Spacer(),
+                        Switch(
+                          value: pirEnabled,
+                          onChanged:
+                              isConnected ? (value) => togglePIR(value) : null,
+                          activeColor: Colors.blue,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
             SizedBox(height: 20),
 
             // Sensor Data Section
@@ -579,7 +730,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
                     Text(
                       'Sensor Data',
                       style: TextStyle(
-                        fontSize: 18,tempet
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
