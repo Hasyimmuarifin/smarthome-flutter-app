@@ -7,6 +7,8 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'dart:convert';
 import 'dart:async';
+import 'package:vibration/vibration.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 //                              Variabels
@@ -14,6 +16,7 @@ import 'dart:async';
 stt.SpeechToText _speech = stt.SpeechToText();
 bool _isListening = false;
 String _command = '';
+final player = AudioPlayer();
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 //                            Fungsi main()
@@ -105,6 +108,20 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
   // - - - - - -  - - - - - - - initSpeech() - - - - - - - - - - - - - - - - - -
   void initSpeech() async {
     await _speech.initialize();
+  }
+
+  void triggerFireAlarm() async {
+    if (await Vibration.hasVibrator() ?? false) {
+      Vibration.vibrate(pattern: [0, 500, 1000, 500]); // getar dengan pola
+    }
+    player.play(AssetSource('sound/PeringatanKebakaran.mp3'));
+  }
+
+  void triggerGasAlarm() async {
+    if (await Vibration.hasVibrator() ?? false) {
+      Vibration.vibrate(pattern: [0, 500, 1000, 500]); // getar dengan pola
+    }
+    player.play(AssetSource('sound/PeringatanKebocorangas.mp3'));
   }
 
   // - - - - - -  - - - - - - Setup MQTT Client() - - - - - - - - - - - - - - -
@@ -214,6 +231,14 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
           fireStatus = data['flame_status'];
           gas = data['gas_percent'];
           gasStatus = data['gas_status'];
+
+          // Trigger alarm jika kondisi gawat
+          if (fireStatus == "BAHAYA") {
+            triggerFireAlarm();
+          }
+          if (gasStatus == "BOCOR") {
+            triggerGasAlarm();
+          }
 
           final pirValue = data['pir'] ?? "";
           if (pirValue == "Terdeteksi") {

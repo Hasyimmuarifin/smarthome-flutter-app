@@ -12,6 +12,8 @@ dependencies:
   # MQTT client for Flutter 
   mqtt_client: ^10.2.0 
   speech_to_text: ^6.6.0
+  vibration: ^1.7.4
+  audioplayers: ^5.2.1
    
   # For JSON handling 
   http: ^1.1.0 
@@ -26,3 +28,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/sound/PeringatanKebakaran.mp3
+    - assets/sound/PeringatanKebocorangas.mp3
