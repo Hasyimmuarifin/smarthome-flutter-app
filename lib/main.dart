@@ -63,8 +63,8 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
   String password = 'uas25_hasyim'; // MQTT Password
 
   // - - - - - - - - - - - - Registration Topics MQTT - - - - - - - - - - -  - -
-  bool pirState = false;   // Ada / tidak ada gerakan
-  bool pirEnabled = true;  // PIR aktif atau nonaktif (toggle)
+  bool pirState = false; // Ada / tidak ada gerakan
+  bool pirEnabled = true; // PIR aktif atau nonaktif (toggle)
   bool lampuState = false;
   bool kipasState = false;
   String ledTopic = 'esp32/led';
@@ -74,6 +74,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
   String kipastopic = "esp32/kipas";
   String listriktopic = "esp32/listrik";
   String pircontroltopic = "esp32/pir_control";
+  String pirstatustopic = "esp32/pir_status";
 
   // - - - - - - - - - - - - - - Devices State - - - - - - - - - - - - - -  - -
   bool ledState = false;
@@ -167,6 +168,7 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     client!.subscribe(lamputopic, MqttQos.atMostOnce);
     client!.subscribe(kipastopic, MqttQos.atMostOnce);
     client!.subscribe(pircontroltopic, MqttQos.atMostOnce);
+    client!.subscribe(pirstatustopic, MqttQos.atMostOnce);
 
     // Listen for messages
     client!.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
@@ -209,16 +211,16 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
           fire = data['flame_percent'];
           gas = data['gas_percent'];
 
-        final pirValue = data['pir'] ?? "";
-        if (pirValue == "Terdeteksi") {
-          pirState = true;
-          pirEnabled = true;
-        } else if (pirValue == "Tidak Ada") {
-          pirState = false;
-          pirEnabled = true;
-        } else if (pirValue == "PIR Nonaktif") {
-          pirEnabled = false;
-        }
+          final pirValue = data['pir'] ?? "";
+          if (pirValue == "Terdeteksi") {
+            pirState = true;
+            pirEnabled = true;
+          } else if (pirValue == "Tidak Ada") {
+            pirState = false;
+            pirEnabled = true;
+          } else if (pirValue == "PIR Nonaktif") {
+            pirEnabled = false;
+          }
         } catch (e) {
           print('Error parsing sensor data: $e');
         }
@@ -252,6 +254,22 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
           pirState = data['enabled'] == true;
         } catch (e) {
           print('Error parsing lampu state: $e');
+        }
+      } else if (topic == "esp32/pir_status") {
+        try {
+          final data = json.decode(message);
+          final status = data['status'];
+          if (status == "Terdeteksi") {
+            pirEnabled = true;
+            pirState = true;
+          } else if (status == "Tidak Ada") {
+            pirEnabled = true;
+            pirState = false;
+          } else if (status == "PIR Nonaktif") {
+            pirEnabled = false;
+          }
+        } catch (e) {
+          print("Error parsing PIR status: $e");
         }
       }
     });
@@ -314,18 +332,18 @@ class _IoTControllerPageState extends State<IoTControllerPage> {
     );
   }
 
-void toggleListrik(bool value) {
-  // Setel status lampu dan kipas mengikuti status listrik
-  lampuState = value;
-  kipasState = value;
+  void toggleListrik(bool value) {
+    // Setel status lampu dan kipas mengikuti status listrik
+    lampuState = value;
+    kipasState = value;
 
-  // Publish ke semua topik
-  publishMqtt("esp32/lampu", {"state": lampuState});
-  publishMqtt("esp32/kipas", {"state": kipasState});
-  publishMqtt("esp32/listrik", {"state": value});
+    // Publish ke semua topik
+    publishMqtt("esp32/lampu", {"state": lampuState});
+    publishMqtt("esp32/kipas", {"state": kipasState});
+    publishMqtt("esp32/listrik", {"state": value});
 
-  setState(() {}); // Update tampilan UI
-}
+    setState(() {}); // Update tampilan UI
+  }
 
   // - - - - - -  - - - - - - - Disconnect() - - - - - - - - - - - - - - - - - -
   void disconnect() {
@@ -396,6 +414,12 @@ void toggleListrik(bool value) {
       publishMqtt("esp32/listrik", {"state": false});
       publishMqtt("esp32/lampu", {"state": false});
       publishMqtt("esp32/kipas", {"state": false});
+    } else if (command.contains("nyalakan sensor gerak") ||
+        command.contains("nyalakan pir")) {
+      togglePIR(true);
+    } else if (command.contains("matikan sensor gerak") ||
+        command.contains("matikan pir")) {
+      togglePIR(false);
     } else {
       print("Perintah tidak dikenali.");
     }
@@ -646,7 +670,9 @@ void toggleListrik(bool value) {
                       children: [
                         Icon(
                           Icons.power,
-                          color: (lampuState || kipasState) ? Colors.green : Colors.grey,
+                          color: (lampuState || kipasState)
+                              ? Colors.green
+                              : Colors.grey,
                           size: 30,
                         ),
                         SizedBox(width: 15),
@@ -657,8 +683,9 @@ void toggleListrik(bool value) {
                         Spacer(),
                         Switch(
                           value: (lampuState || kipasState),
-                          onChanged:
-                              isConnected ? (value) => toggleListrik(value) : null,
+                          onChanged: isConnected
+                              ? (value) => toggleListrik(value)
+                              : null,
                           activeColor: Colors.blue,
                         ),
                       ],
@@ -689,8 +716,8 @@ void toggleListrik(bool value) {
                         Icon(
                           Icons.emoji_people_rounded,
                           color: pirEnabled
-                            ? (pirState ? Colors.orange : Colors.grey)
-                            : Colors.grey.shade400,
+                              ? (pirState ? Colors.orange : Colors.grey)
+                              : Colors.grey.shade400,
                           size: 30,
                         ),
                         SizedBox(width: 15),
