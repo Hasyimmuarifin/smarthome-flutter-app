@@ -32,26 +32,52 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'IoT MQTT Controller',
+      title: 'Smart Home Controller',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6366F1),
-          brightness: Brightness.light,
-        ),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        primarySwatch: Colors.blue,
+        primaryColor: Color(0xFF1E3A8A),
+        scaffoldBackgroundColor: Color(0xFFF8FAFC),
         cardTheme: CardTheme(
-          elevation: 0,
+          elevation: 3,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(12),
           ),
+          margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         ),
         appBarTheme: AppBarTheme(
-          centerTitle: true,
+          backgroundColor: Color(0xFF1E3A8A),
           elevation: 0,
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.grey.shade800,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Color(0xFF1E3A8A), width: 2),
+          ),
         ),
       ),
       home: IoTControllerPage(),
@@ -70,12 +96,10 @@ class IoTControllerPage extends StatefulWidget {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 //                      Class _IoTControllerPageState
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-class _IoTControllerPageState extends State<IoTControllerPage> with TickerProviderStateMixin {
+class _IoTControllerPageState extends State<IoTControllerPage> {
   MqttServerClient? client;
   bool isConnected = false;
   String connectionStatus = 'Disconnected';
-  late AnimationController _pulseController;
-  late AnimationController _rotateController;
 
   // - - - - - - - - - - - - - - MQTT Configuration - - - - - - - - - - -  - - -
   String broker = '192.168.11.103'; // Ganti dengan broker Anda
@@ -122,16 +146,6 @@ class _IoTControllerPageState extends State<IoTControllerPage> with TickerProvid
     brokerController.text = broker;
     setupMqttClient();
     initSpeech();
-    
-    _pulseController = AnimationController(
-      duration: Duration(seconds: 2),
-      vsync: this,
-    )..repeat(reverse: true);
-    
-    _rotateController = AnimationController(
-      duration: Duration(seconds: 2),
-      vsync: this,
-    )..repeat();
   }
 
   // - - - - - -  - - - - - - - initSpeech() - - - - - - - - - - - - - - - - - -
@@ -416,8 +430,6 @@ class _IoTControllerPageState extends State<IoTControllerPage> with TickerProvid
     usernameController.dispose();
     passwordController.dispose();
     topicController.dispose();
-    _pulseController.dispose();
-    _rotateController.dispose();
     super.dispose();
   }
 
@@ -485,700 +497,329 @@ class _IoTControllerPageState extends State<IoTControllerPage> with TickerProvid
     }
   }
 
-  // Helper method to create gradient containers
-  Widget _buildGradientCard({
-    required Widget child,
-    required List<Color> colors,
-    double? height,
-  }) {
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: colors,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: colors.first.withOpacity(0.3),
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-
   // - - - - - -  - - - - - WIDGET BUILD (TAMPILAN) - - - - - - - - - - - - - -
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+        title: Text('Smart Home Controller'),
+        actions: [
+          Container(
+            margin: EdgeInsets.only(right: 16),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isConnected ? Icons.wifi : Icons.wifi_off,
+                  color: isConnected ? Colors.greenAccent : Colors.redAccent,
+                  size: 20,
                 ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.developer_board, color: Colors.white, size: 20),
+                SizedBox(width: 4),
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: deviceStatus.toLowerCase() == 'online' 
+                        ? Colors.green 
+                        : Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
             ),
-            SizedBox(width: 12),
-            Text(
-              'IoT Controller',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: ClampingScrollPhysics(),
+          child: Padding(
+            padding: EdgeInsets.all(12.0),
+            child: Column(
+              children: [
+            // Connection Section
+            _buildConnectionCard(),
+            SizedBox(height: 12),
+            
+            // Device Status
+            _buildDeviceStatusCard(),
+            SizedBox(height: 12),
+            
+            // Control Sections in Grid
+            _buildControlGrid(),
+            SizedBox(height: 12),
+            
+            // Sensor Data
+            _buildSensorDataCard(),
+            SizedBox(height: 12),
+            
+            // Fire and Gas Section
+            _buildFireGasCard(),
+            SizedBox(height: 12),
+            
+            // Voice Command Button
+            _buildVoiceCommandButton(),
+            SizedBox(height: 20),
+          ],
+        ),
+      ),
+      ),
+      ),
+    );
+  }
+
+  // Helper methods for building UI components
+  Widget _buildConnectionCard() {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.cloud_sync, color: Theme.of(context).primaryColor),
+                SizedBox(width: 8),
+                Text(
+                  'MQTT Connection',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                Spacer(),
+                _buildConnectionStatusChip(),
+              ],
+            ),
+            SizedBox(height: 16),
+            TextField(
+              controller: brokerController,
+              decoration: InputDecoration(
+                labelText: 'MQTT Broker',
+                prefixIcon: Icon(Icons.dns),
+                isDense: true,
               ),
+              onChanged: (value) => broker = value,
+            ),
+            SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: usernameController,
+                    decoration: InputDecoration(
+                      labelText: 'Username',
+                      prefixIcon: Icon(Icons.person),
+                      isDense: true,
+                    ),
+                    onChanged: (value) => username = value,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: Icon(Icons.lock),
+                      isDense: true,
+                    ),
+                    obscureText: true,
+                    onChanged: (value) => password = value,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: isConnected ? null : connectToMqtt,
+                    icon: Icon(Icons.link, size: 18),
+                    label: Text('Connect'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade600,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: isConnected ? disconnect : null,
+                    icon: Icon(Icons.link_off, size: 18),
+                    label: Text('Disconnect'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade600,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20.0),
+    );
+  }
+
+  Widget _buildConnectionStatusChip() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isConnected ? Colors.green.shade100 : Colors.red.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isConnected ? Icons.check_circle : Icons.error,
+            size: 14,
+            color: isConnected ? Colors.green.shade700 : Colors.red.shade700,
+          ),
+          SizedBox(width: 4),
+          Text(
+            connectionStatus,
+            style: TextStyle(
+              color: isConnected ? Colors.green.shade700 : Colors.red.shade700,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeviceStatusCard() {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Connection Section with Modern Design
-            _buildGradientCard(
-              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.wifi, color: Colors.white, size: 24),
-                        SizedBox(width: 8),
-                        Text(
-                          'MQTT Connection',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: TextField(
-                        controller: brokerController,
-                        style: TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          labelText: 'MQTT Broker',
-                          labelStyle: TextStyle(color: Colors.white70),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.1),
-                          prefixIcon: Icon(Icons.dns, color: Colors.white70),
-                        ),
-                        onChanged: (value) => broker = value,
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: TextField(
-                              controller: usernameController,
-                              style: TextStyle(color: Colors.white),
-                              decoration: InputDecoration(
-                                labelText: 'Username',
-                                labelStyle: TextStyle(color: Colors.white70),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                filled: true,
-                                fillColor: Colors.white.withOpacity(0.1),
-                                prefixIcon: Icon(Icons.person, color: Colors.white70),
-                              ),
-                              onChanged: (value) => username = value,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: TextField(
-                              controller: passwordController,
-                              style: TextStyle(color: Colors.white),
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                                labelStyle: TextStyle(color: Colors.white70),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                filled: true,
-                                fillColor: Colors.white.withOpacity(0.1),
-                                prefixIcon: Icon(Icons.lock, color: Colors.white70),
-                              ),
-                              obscureText: true,
-                              onChanged: (value) => password = value,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: isConnected ? null : connectToMqtt,
-                            icon: Icon(Icons.link),
-                            label: Text('Connect'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Color(0xFF6366F1),
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: isConnected ? disconnect : null,
-                            icon: Icon(Icons.link_off),
-                            label: Text('Disconnect'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red.shade400,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    Row(
-                      children: [
-                        AnimatedBuilder(
-                          animation: _pulseController,
-                          builder: (context, child) {
-                            return Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                color: isConnected ? Colors.green : Colors.red,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: (isConnected ? Colors.green : Colors.red)
-                                        .withOpacity(_pulseController.value),
-                                    blurRadius: 8,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          connectionStatus,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+            Row(
+              children: [
+                Icon(Icons.devices_other, color: Theme.of(context).primaryColor),
+                SizedBox(width: 8),
+                Text(
+                  'Device Status',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
                 ),
-              ),
+              ],
             ),
-
-            SizedBox(height: 20),
-
-            // Device Status with animated indicator
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.devices, color: Color(0xFF6366F1), size: 24),
-                        SizedBox(width: 8),
-                        Text(
-                          'Device Status',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      children: [
-                        AnimatedBuilder(
-                          animation: _pulseController,
-                          builder: (context, child) {
-                            return Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                color: deviceStatus.toLowerCase() == 'online'
-                                    ? Colors.green
-                                    : Colors.red,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: (deviceStatus.toLowerCase() == 'online'
-                                            ? Colors.green
-                                            : Colors.red)
-                                        .withOpacity(_pulseController.value),
-                                    blurRadius: 6,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                        SizedBox(width: 12),
-                        Text(
-                          deviceStatus,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: deviceStatus.toLowerCase() == 'online'
-                                ? Colors.green
-                                : Colors.red,
-                          ),
-                        ),
-                        Spacer(),
-                        if (uptime > 0)
-                          Text(
-                            'Uptime: ${uptime}s',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 14,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: deviceStatus.toLowerCase() == 'online'
+                    ? Colors.green.shade50
+                    : Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
               ),
-            ),
-
-            SizedBox(height: 20),
-
-            // Voice Control Section
-            _buildGradientCard(
-              colors: [Color(0xFF10B981), Color(0xFF34D399)],
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.mic, color: Colors.white, size: 24),
-                        SizedBox(width: 8),
-                        Text(
-                          'Voice Control',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+              child: Row(
+                children: [
+                  Icon(
+                    deviceStatus.toLowerCase() == 'online'
+                        ? Icons.check_circle_outline
+                        : Icons.error_outline,
+                    color: deviceStatus.toLowerCase() == 'online'
+                        ? Colors.green.shade600
+                        : Colors.red.shade600,
+                  ),
+                  SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        deviceStatus.toUpperCase(),
+                        style: TextStyle(
+                          color: deviceStatus.toLowerCase() == 'online'
+                              ? Colors.green.shade700
+                              : Colors.red.shade700,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    AnimatedBuilder(
-                      animation: _pulseController,
-                      builder: (context, child) {
-                        return GestureDetector(
-                          onTap: listenCommand,
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.white.withOpacity(
-                                    _isListening ? _pulseController.value : 0.3,
-                                  ),
-                                  blurRadius: 20,
-                                  spreadRadius: _isListening ? 10 : 0,
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              _isListening ? Icons.mic : Icons.mic_none,
-                              size: 40,
-                              color: _isListening ? Color(0xFF10B981) : Color(0xFF6B7280),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      _isListening ? 'Listening...' : 'Tap to speak',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
                       ),
-                    ),
-                    if (_command.isNotEmpty)
-                      Container(
-                        margin: EdgeInsets.only(top: 12),
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'Command: $_command',
+                      if (uptime > 0)
+                        Text(
+                          'Uptime: ${_formatUptime(uptime)}',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Colors.grey.shade600,
                             fontSize: 12,
                           ),
                         ),
-                      ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             ),
-
-            SizedBox(height: 20),
-
-            // Controls Section
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.control_camera, color: Color(0xFF6366F1), size: 24),
-                        SizedBox(width: 8),
-                        Text(
-                          'Device Controls',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    
-                    // Main Power Control
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.power_settings_new, color: Colors.white, size: 28),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Main Power',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  'Controls all devices',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Switch(
-                            value: lampuState && kipasState,
-                            onChanged: toggleListrik,
-                            activeColor: Colors.white,
-                            activeTrackColor: Colors.white.withOpacity(0.3),
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    SizedBox(height: 16),
-                    
-                    // Individual Controls
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildControlCard(
-                            icon: Icons.lightbulb,
-                            title: 'Lampu',
-                            subtitle: lampuState ? 'ON' : 'OFF',
-                            isActive: lampuState,
-                            onTap: toggleLampu,
-                            colors: [Color(0xFFF59E0B), Color(0xFFEAB308)],
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: _buildControlCard(
-                            icon: Icons.air,
-                            title: 'Kipas',
-                            subtitle: kipasState ? 'ON' : 'OFF',
-                            isActive: kipasState,
-                            onTap: toggleKipas,
-                            colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 16),
-
-                    // PIR Control
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: pirEnabled ? Color(0xFF10B981) : Colors.grey,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.motion_photos_on,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Motion Sensor (PIR)',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  pirEnabled 
-                                    ? (pirState ? 'Motion Detected' : 'No Motion')
-                                    : 'Disabled',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Switch(
-                            value: pirEnabled,
-                            onChanged: togglePIR,
-                            activeColor: Color(0xFF10B981),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            SizedBox(height: 20),
-
-            // Sensor Data Section
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.sensors, color: Color(0xFF6366F1), size: 24),
-                        SizedBox(width: 8),
-                        Text(
-                          'Sensor Data',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    
-                    // Temperature & Humidity
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildSensorCard(
-                            icon: Icons.thermostat,
-                            title: 'Temperature',
-                            value: '${temperature.toStringAsFixed(1)}°C',
-                            colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: _buildSensorCard(
-                            icon: Icons.water_drop,
-                            title: 'Humidity',
-                            value: '${humidity.toStringAsFixed(1)}%',
-                            colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    SizedBox(height: 12),
-                    
-                    // Fire & Gas Detection
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildSensorCard(
-                            icon: Icons.local_fire_department,
-                            title: 'Fire Detection',
-                            value: '$fire%',
-                            subtitle: fireStatus,
-                            colors: fireStatus == 'BAHAYA' 
-                              ? [Color(0xFFDC2626), Color(0xFFB91C1C)]
-                              : [Color(0xFF059669), Color(0xFF047857)],
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: _buildSensorCard(
-                            icon: Icons.cloud,
-                            title: 'Gas Detection',
-                            value: '$gas%',
-                            subtitle: gasStatus,
-                            colors: gasStatus == 'BOCOR' 
-                              ? [Color(0xFFDC2626), Color(0xFFB91C1C)]
-                              : [Color(0xFF059669), Color(0xFF047857)],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  // Helper method to build control cards
-  Widget _buildControlCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool isActive,
-    required VoidCallback onTap,
-    required List<Color> colors,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: Duration(milliseconds: 200),
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: isActive 
-            ? LinearGradient(colors: colors)
-            : LinearGradient(colors: [Colors.grey.shade300, Colors.grey.shade400]),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: (isActive ? colors.first : Colors.grey).withOpacity(0.3),
-              blurRadius: 8,
-              offset: Offset(0, 4),
-            ),
+  Widget _buildControlGrid() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(child: _buildLampuControl()),
+            SizedBox(width: 8),
+            Expanded(child: _buildKipasControl()),
           ],
         ),
+        SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: _buildListrikControl()),
+            SizedBox(width: 8),
+            Expanded(child: _buildPirControl()),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLampuControl() {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(12.0),
         child: Column(
           children: [
             Icon(
-              icon,
+              Icons.lightbulb,
               size: 32,
-              color: Colors.white,
+              color: lampuState ? Colors.amber.shade600 : Colors.grey.shade400,
             ),
             SizedBox(height: 8),
             Text(
-              title,
+              'Lampu',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 4),
+            Text(
+              lampuState ? 'ON' : 'OFF',
               style: TextStyle(
-                color: Colors.white,
+                color: lampuState ? Colors.amber.shade700 : Colors.grey.shade600,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
-                fontSize: 14,
               ),
             ),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
+            SizedBox(height: 8),
+            Transform.scale(
+              scale: 0.8,
+              child: Switch(
+                value: lampuState,
+                onChanged: isConnected ? (value) => toggleLampu() : null,
+                activeColor: Colors.amber.shade600,
               ),
             ),
           ],
@@ -1187,65 +828,422 @@ class _IoTControllerPageState extends State<IoTControllerPage> with TickerProvid
     );
   }
 
-  // Helper method to build sensor cards
-  Widget _buildSensorCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    String? subtitle,
-    required List<Color> colors,
-  }) {
+  Widget _buildKipasControl() {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            Icon(
+              Icons.air,
+              size: 32,
+              color: kipasState ? Colors.blue.shade600 : Colors.grey.shade400,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Kipas',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 4),
+            Text(
+              kipasState ? 'ON' : 'OFF',
+              style: TextStyle(
+                color: kipasState ? Colors.blue.shade700 : Colors.grey.shade600,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Transform.scale(
+              scale: 0.8,
+              child: Switch(
+                value: kipasState,
+                onChanged: isConnected ? (value) => toggleKipas() : null,
+                activeColor: Colors.blue.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListrikControl() {
+    bool isOn = lampuState || kipasState;
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            Icon(
+              Icons.power,
+              size: 32,
+              color: isOn ? Colors.green.shade600 : Colors.grey.shade400,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Listrik',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 4),
+            Text(
+              isOn ? 'ON' : 'OFF',
+              style: TextStyle(
+                color: isOn ? Colors.green.shade700 : Colors.grey.shade600,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Transform.scale(
+              scale: 0.8,
+              child: Switch(
+                value: isOn,
+                onChanged: isConnected ? (value) => toggleListrik(value) : null,
+                activeColor: Colors.green.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPirControl() {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            Icon(
+              pirEnabled
+                  ? (pirState ? Icons.directions_run : Icons.accessibility_new)
+                  : Icons.do_not_touch,
+              size: 32,
+              color: pirEnabled
+                  ? (pirState ? Colors.orange.shade600 : Colors.blue.shade600)
+                  : Colors.grey.shade400,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'PIR',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 4),
+            Text(
+              pirEnabled ? (pirState ? 'DETECT' : 'CLEAR') : 'OFF',
+              style: TextStyle(
+                color: pirEnabled
+                    ? (pirState ? Colors.orange.shade700 : Colors.blue.shade700)
+                    : Colors.grey.shade600,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Transform.scale(
+              scale: 0.8,
+              child: Switch(
+                value: pirEnabled,
+                onChanged: isConnected ? (value) => togglePIR(value) : null,
+                activeColor: Colors.blue.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSensorDataCard() {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.sensors, color: Theme.of(context).primaryColor),
+                SizedBox(width: 8),
+                Text(
+                  'Sensor Data',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: _buildTemperatureWidget()),
+                SizedBox(width: 12),
+                Expanded(child: _buildHumidityWidget()),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTemperatureWidget() {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: colors),
+        color: Colors.red.shade50,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: colors.first.withOpacity(0.3),
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: Colors.white, size: 24),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          Icon(Icons.thermostat, size: 32, color: Colors.red.shade600),
           SizedBox(height: 8),
           Text(
-            value,
+            '${temperature.toStringAsFixed(1)}°C',
             style: TextStyle(
-              color: Colors.white,
               fontSize: 20,
               fontWeight: FontWeight.bold,
+              color: Colors.red.shade700,
             ),
           ),
-          if (subtitle != null)
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
+          Text(
+            'Temperature',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 12,
             ),
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildHumidityWidget() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.water_drop, size: 32, color: Colors.blue.shade600),
+          SizedBox(height: 8),
+          Text(
+            '${humidity.toStringAsFixed(1)}%',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.blue.shade700,
+            ),
+          ),
+          Text(
+            'Humidity',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFireGasCard() {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.warning_amber, color: Theme.of(context).primaryColor),
+                SizedBox(width: 8),
+                Text(
+                  'Fire & Gas Monitor',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: _buildFireWidget()),
+                SizedBox(width: 12),
+                Expanded(child: _buildGasWidget()),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFireWidget() {
+    MaterialColor statusColorMaterial;
+    String statusText = fireStatus;
+    
+    if (fireStatus == "BAHAYA") {
+      statusColorMaterial = Colors.red;
+    } else if (fireStatus == "WASPADA") {
+      statusColorMaterial = Colors.orange;
+    } else {
+      statusColorMaterial = Colors.green;
+    }
+        
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: statusColorMaterial.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: statusColorMaterial.shade200),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.local_fire_department, size: 32, color: statusColorMaterial.shade600),
+          SizedBox(height: 8),
+          Text(
+            '${fire.toStringAsFixed(0)}%',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: statusColorMaterial.shade700,
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: statusColorMaterial.shade200,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              statusText,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: statusColorMaterial.shade800,
+              ),
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Fire',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGasWidget() {
+    MaterialColor statusColorMaterial = gasStatus == "BOCOR" ? Colors.red : Colors.green;
+        
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: statusColorMaterial.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: statusColorMaterial.shade200),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.gas_meter, size: 32, color: statusColorMaterial.shade600),
+          SizedBox(height: 8),
+          Text(
+            '${gas.toStringAsFixed(0)}%',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: statusColorMaterial.shade700,
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: statusColorMaterial.shade200,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              gasStatus,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: statusColorMaterial.shade800,
+              ),
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Gas',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVoiceCommandButton() {
+    return Container(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: listenCommand,
+        icon: AnimatedContainer(
+          duration: Duration(milliseconds: 300),
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: _isListening ? Colors.red.withOpacity(0.2) : Colors.transparent,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            _isListening ? Icons.mic : Icons.mic_none,
+            color: _isListening ? Colors.red : Colors.white,
+            size: 24,
+          ),
+        ),
+        label: Text(
+          _isListening ? 'Mendengarkan...' : 'Perintah Suara',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _isListening ? Colors.orange.shade200 : Colors.orange.shade600,
+          foregroundColor: _isListening ? Colors.orange.shade900 : Colors.white,
+          padding: EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: _isListening ? 1 : 3,
+        ),
+      ),
+    );
+  }
+
+  // - - - - - -  - - - - - - - - - Format Up Time() - - - - - - - - - - - - - -
+  String _formatUptime(int seconds) {
+    final int hours = seconds ~/ 3600;
+    final int minutes = (seconds % 3600) ~/ 60;
+    final int secs = seconds % 60;
+    return '${hours}h ${minutes}m ${secs}s';
+
+    // if (hours > 0) {
+    //   return '${hours}h ${minutes}m ${secs}s';
+    // } else if (minutes > 0) {
+    //   return '${minutes}m ${secs}s';
+    // } else {
+    //   return '${secs}s';
+    // }
   }
 }
