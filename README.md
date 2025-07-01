@@ -5,3 +5,5 @@ Proyek ini adalah aplikasi Flutter untuk mengontrol perangkat IoT dalam sistem S
 2. Deteksi gerakan (sensor PIR)
 3. Perintah suara berbasis speech recognition
 4. UI responsif dan real-time monitoring
+
+Kode Arduino IDE *.ino untuk ESP32 ada pada Repository berikut : https://github.com/Hasyimmuarifin/esp32-smart-home-system
